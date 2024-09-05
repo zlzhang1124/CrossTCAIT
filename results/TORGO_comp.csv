@@ -1,0 +1,4 @@
+Task,Feature-Model Config,Acc/%,F1/%,Sen/%,Spe/%,AUC/%,Training Time/s
+Sentences,DMFCC-CEEMDAN,73.06 (11.59),84.17,81.95,61.35,81.13,0.35 (0.04)
+Sentences,BiLSTM-Attention,80.70 (11.15),86.94,86.41,62.58,82.41,36.71 (2.91)
+Sentences,CTCAIT,87.73 (9.77),91.69,92.90,70.55,89.52,44.16 (7.02)
