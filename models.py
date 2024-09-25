@@ -774,84 +774,10 @@ class LstmInteraInceptionTimeModel(CrossTCAInceptionTimeModel):
         """
         if self.model_name == "CTCAIT_dropTC":
             model = self.model_create_dropTC()
-        elif self.model_name == "CT_LSTM":
-            model = self.model_create_CTLSTM()
-        elif self.model_name == "CC_LSTM":
-            model = self.model_create_CCLSTM()
         elif self.model_name == "CTC_LSTM":
             model = self.model_create_CTCLSTM()
-        elif self.model_name == "CTCAIT_dropC":
-            model = self.model_create_dropC()
-        elif self.model_name == "CTCAIT_dropT":
-            model = self.model_create_dropT()
         else:
             model = self.model_create_all()
-        return model
-
-    def model_create_CTLSTM(self):
-        """
-        构建模型：LSTM作为跨时间交互模块
-        :return: 返回模型
-        """
-        inputs = Input(shape=(self.train_data_clf.shape[1], self.train_data_clf.shape[-1]))
-        inputs_downsample = Permute((2, 1))(MixPooling1D(pool_size=3)(Permute((2, 1))(inputs)))  # shape=(None, 499, 512)
-        # stack inception modules
-        inc_output = inputs_downsample  # initialize first layer as the input layer
-        input_res = inputs_downsample  # initialize short-cut layer with input layer
-        for d in range(self.inception.depth):
-            inc_output = self.inception.inception_module(inc_output)
-            if self.inception.use_residual and d % 3 == 2:
-                inc_output = self.inception.shortcut_layer(input_res, inc_output)
-                input_res = inc_output
-        block = self.inception.shortcut_layer(inputs_downsample, inc_output)  # shape=(None, 499, 128)
-        # Cross-temporal LSTM
-        lstm_t = LSTM(128, return_sequences=True)(block)  # shape=(None, 499, 128)
-        layer_gap = GlobalAveragePooling1D()(lstm_t)  # shape=(None, 128)
-        layer_fc = Dense(32)(layer_gap)
-        layer_bn = BatchNormalization()(layer_fc)
-        layer_ac = Activation("swish")(layer_bn)
-        outputs = Dense(2, activation="softmax")(layer_ac)
-        model = Model(inputs=inputs, outputs=outputs)
-        # 编译模型：损失函数采用分类交叉熵，优化采用Adam，将识别准确率作为模型评估
-        n_samp = self.train_data_clf.shape[0] * (1 - 1 / self.n_folders) / self.batch_size
-        total_steps, warmup_steps = calc_train_steps(num_example=n_samp, batch_size=self.batch_size,
-                                                     epochs=self.epochs, warmup_proportion=0.2)
-        opt = AdamWarmup(total_steps, warmup_steps, lr=1e-3, min_lr=1e-5)
-        model.compile(loss="sparse_categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
-        return model
-
-    def model_create_CCLSTM(self):
-        """
-        构建模型：LSTM作为跨通道交互模块
-        :return: 返回模型
-        """
-        inputs = Input(shape=(self.train_data_clf.shape[1], self.train_data_clf.shape[-1]))
-        inputs_downsample = Permute((2, 1))(MixPooling1D(pool_size=3)(Permute((2, 1))(inputs)))  # shape=(None, 499, 512)
-        # Cross-variable LSTM
-        inputs_c = Permute((2, 1))(inputs_downsample)
-        lstm_c = LSTM(128, return_sequences=True)(inputs_c)  # shape=(None, 512, 128)
-        # stack inception modules
-        inc_output = inputs_downsample  # initialize first layer as the input layer
-        input_res = inputs_downsample  # initialize short-cut layer with input layer
-        for d in range(self.inception.depth):
-            inc_output = self.inception.inception_module(inc_output)
-            if self.inception.use_residual and d % 3 == 2:
-                inc_output = self.inception.shortcut_layer(input_res, inc_output)
-                input_res = inc_output
-        block = self.inception.shortcut_layer(inputs_downsample, inc_output)  # shape=(None, 499, 128)
-        cross_output = Concatenate(axis=1)([block, lstm_c])  # (None, 499+512, 128)
-        layer_gap = GlobalAveragePooling1D()(cross_output)  # shape=(None, 128)
-        layer_fc = Dense(32)(layer_gap)
-        layer_bn = BatchNormalization()(layer_fc)
-        layer_ac = Activation("swish")(layer_bn)
-        outputs = Dense(2, activation="softmax")(layer_ac)
-        model = Model(inputs=inputs, outputs=outputs)
-        # 编译模型：损失函数采用分类交叉熵，优化采用Adam，将识别准确率作为模型评估
-        n_samp = self.train_data_clf.shape[0] * (1 - 1 / self.n_folders) / self.batch_size
-        total_steps, warmup_steps = calc_train_steps(num_example=n_samp, batch_size=self.batch_size,
-                                                     epochs=self.epochs, warmup_proportion=0.2)
-        opt = AdamWarmup(total_steps, warmup_steps, lr=1e-3, min_lr=1e-5)
-        model.compile(loss="sparse_categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
         return model
 
     def model_create_CTCLSTM(self):
