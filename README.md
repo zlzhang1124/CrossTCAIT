@@ -1,4 +1,4 @@
-## This is the source code for the article ''*****Multivariate Time Series Processing Approach Integrating Interactions for Dysarthria Recognition*****''.
+## This is the source code for the article ''***Multivariate Time Series Approach Integrating Cross-Temporal and Cross-Channel Attention for Dysarthria Detection From Speech***''.
 
 Please start with the main.py.
 
