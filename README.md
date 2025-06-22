@@ -8,5 +8,4 @@ Since the data used in this study include naturalistic speech samples that can b
 
 If you use the code in your research, we would appreciate a citation to the appropriate paper(s):
 
-> NA now.
-
+> Zhang, Z., Wang, T., Hu, Z., Yang, L.-Z., and Li, H. Multivariate time series approach integrating cross-temporal and cross-channel attention for dysarthria detection from speech. Neurocomputing. 2025, 647 (130708). DOI: 10.1016/j.neucom.2025.130708.
